@@ -42,19 +42,63 @@ app.get("/users/:id", async (req, res) => {
 
   // must be a string of 12 bytes or a string of 24 hex characters or an integer
   if (!ObjectId.isValid(req.params)) {
-    return res.status(406).send("User with that invalid id does not exist!");
+    return res
+      .status(406)
+      .send({ error: "User with that invalid id does not exist!" });
   }
 
   // .findById() returns a promise
   try {
     const user = await User.findById(_id);
     if (!user) {
-      return res.status(404).send("User not found or does not exist!");
+      return res
+        .status(404)
+        .send({ error: "User not found or does not exist!" });
     }
 
     res.send(user);
   } catch (e) {
     res.status(500).send(e.name);
+  }
+});
+
+//Route handler: Update a user with a specific id using the "users/:id" endpoint
+app.patch("/users/:id", async (req, res) => {
+  //compare requested updates to allowed updated per the model schema
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["name", "email", "password", "age"];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation) {
+    return res.status(400).send({ error: "Invalid updates!" });
+  }
+
+  const _id = req.params.id;
+
+  // must be a string of 12 bytes or a string of 24 hex characters or an integer
+  if (!ObjectId.isValid(req.params)) {
+    return res
+      .status(406)
+      .send({ error: "User with that invalid id does not exist!" });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(_id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ error: "User not found or does not exist!" });
+    }
+
+    res.send(user);
+  } catch (e) {
+    res.status(400).send(e.message);
   }
 });
 
@@ -86,14 +130,18 @@ app.get("/tasks", async (req, res) => {
 app.get("/tasks/:id", async (req, res) => {
   const _id = req.params.id;
   if (!ObjectId.isValid(_id)) {
-    return res.status(406).send("Task with that invalid id does not exist!");
+    return res
+      .status(406)
+      .send({ error: "Task with that invalid id does not exist!" });
   }
 
   // findById() returns a promise
   try {
     const task = await Task.findById(_id);
     if (!task) {
-      return res.status(404).send("Task not found or does not exist!");
+      return res
+        .status(404)
+        .send({ error: "Task not found or does not exist!" });
     }
 
     res.send(task);
@@ -102,13 +150,45 @@ app.get("/tasks/:id", async (req, res) => {
   }
 });
 
-app.patch('/users:id', async (req, res) => {
-  try{
-    
-  }catch(e){
+//Route handler: Update a task with a specific id using the "tasks/:id" endpoint
+app.patch("/tasks/:id", async (req, res) => {
+  //compare requested updates to allowed updated per the model schema
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["description", "completed"];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
 
+  if (!isValidOperation) {
+    return res.status(400).send({ error: "Invalid updates!" });
   }
-})
+
+  const _id = req.params.id;
+
+  // must be a string of 12 bytes or a string of 24 hex characters or an integer
+  if (!ObjectId.isValid(req.params)) {
+    return res
+      .status(406)
+      .send({ error: "Task with that invalid id does not exist!" });
+  }
+
+  try {
+    const task = await Task.findByIdAndUpdate(_id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!task) {
+      return res
+        .status(404)
+        .send({ error: "Task not found or does not exist!" });
+    }
+
+    res.send(task);
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
 
 // listen on the port xxxx at the server
 app.listen(port, () => {
