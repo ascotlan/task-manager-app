@@ -9,7 +9,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const app = express();
 const port = process.env.PORT || 3000; //Set port to value provided by environment or default to 3000
 
-//parse all incoming JSON requests into an object
+//Use this middleware to parse all incoming JSON requests into an object
 app.use(express.json());
 
 //Route handler: Create a user using the "/users" endpoint
@@ -102,6 +102,32 @@ app.patch("/users/:id", async (req, res) => {
   }
 });
 
+//Route handler: Delete a user using the "/users/:id" endpoint
+app.delete("/users/:id", async (req, res) => {
+  const _id = req.params.id;
+
+  // must be a string of 12 bytes or a string of 24 hex characters or an integer
+  if (!ObjectId.isValid(req.params)) {
+    return res
+      .status(406)
+      .send({ error: "User with that invalid id does not exist!" });
+  }
+
+  try {
+    const user = await User.findByIdAndDelete(_id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ error: "User not found or does not exist!" });
+    }
+
+    res.send(user);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
 //Route handler: Create a task using the "/tasks" endpoint
 app.post("/tasks", async (req, res) => {
   const task = new Task(req.body); // create new task passing in the required object
@@ -187,6 +213,32 @@ app.patch("/tasks/:id", async (req, res) => {
     res.send(task);
   } catch (e) {
     res.status(400).send(e.message);
+  }
+});
+
+//Route handler: Delete a task using the "/tasks/:id" endpoint
+app.delete("/tasks/:id", async (req, res) => {
+  const _id = req.params.id;
+
+  // must be a string of 12 bytes or a string of 24 hex characters or an integer
+  if (!ObjectId.isValid(req.params)) {
+    return res
+      .status(406)
+      .send({ error: "Task with that invalid id does not exist!" });
+  }
+
+  try {
+    const task = await Task.findByIdAndDelete(_id);
+
+    if (!task) {
+      return res
+        .status(404)
+        .send({ error: "Task not found or does not exist!" });
+    }
+
+    res.send(task);
+  } catch (e) {
+    res.status(500).send(e.message);
   }
 });
 
