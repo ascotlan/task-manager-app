@@ -1,6 +1,5 @@
 const express = require("express");
 const router = new express.Router();
-const ObjectId = require("mongoose").Types.ObjectId;
 const Task = require("../models/task"); //import task model
 const auth = require("../middleware/auth");
 
@@ -21,42 +20,34 @@ router.post("/tasks", auth, async (req, res) => {
 });
 
 // Route handler: Read all tasks from the database using the '/tasks' endpoint
-router.get("/tasks", async (req, res) => {
-  //find() returns a promise
+router.get("/tasks", auth, async (req, res) => {
   try {
-    const tasks = await Task.find({});
-    res.send(tasks);
+    await req.user.populate("tasks"); //populate virtual tasks file on user document
+    res.send(req.user.tasks);
   } catch (e) {
     res.status(500).send(e.message);
   }
 });
 
 // Route handler: Read a task with a specific id using the "/tasks/:id" endpoint
-router.get("/tasks/:id", async (req, res) => {
+router.get("/tasks/:id", auth, async (req, res) => {
   const _id = req.params.id;
-  if (!ObjectId.isValid(_id)) {
-    return res
-      .status(406)
-      .send({ error: "Task with that invalid id does not exist!" });
-  }
 
-  // findById() returns a promise
   try {
-    const task = await Task.findById(_id);
+    const task = await Task.findOne({ _id, owner: req.user._id });
+
     if (!task) {
-      return res
-        .status(404)
-        .send({ error: "Task not found or does not exist!" });
+      return res.status(404).send();
     }
 
     res.send(task);
   } catch (e) {
-    res.status(500).send(e.message);
+    res.status(500).send();
   }
 });
 
 //Route handler: Update a task with a specific id using the "tasks/:id" endpoint
-router.patch("/tasks/:id", async (req, res) => {
+router.patch("/tasks/:id", auth, async (req, res) => {
   //compare requested updates to allowed updated per the model schema
   const updates = Object.keys(req.body);
   const allowedUpdates = ["description", "completed"];
@@ -70,24 +61,15 @@ router.patch("/tasks/:id", async (req, res) => {
 
   const _id = req.params.id;
 
-  // must be a string of 12 bytes or a string of 24 hex characters or an integer
-  if (!ObjectId.isValid(req.params)) {
-    return res
-      .status(406)
-      .send({ error: "Task with that invalid id does not exist!" });
-  }
-
   try {
-    const task = await Task.findById(_id);
-    updates.forEach((update) => (task[update] = req.body[update]));
-    await task.save();
+    const task = await Task.findOne({ _id, owner: req.user._id });
 
     if (!task) {
-      return res
-        .status(404)
-        .send({ error: "Task not found or does not exist!" });
+      return res.status(404).send();
     }
 
+    updates.forEach((update) => (task[update] = req.body[update]));
+    await task.save();
     res.send(task);
   } catch (e) {
     res.status(400).send(e.message);
@@ -95,23 +77,14 @@ router.patch("/tasks/:id", async (req, res) => {
 });
 
 //Route handler: Delete a task using the "/tasks/:id" endpoint
-router.delete("/tasks/:id", async (req, res) => {
+router.delete("/tasks/:id", auth, async (req, res) => {
   const _id = req.params.id;
 
-  // must be a string of 12 bytes or a string of 24 hex characters or an integer
-  if (!ObjectId.isValid(req.params)) {
-    return res
-      .status(406)
-      .send({ error: "Task with that invalid id does not exist!" });
-  }
-
   try {
-    const task = await Task.findByIdAndDelete(_id);
+    const task = await Task.findOneAndDelete({ _id, owner: req.user._id });
 
     if (!task) {
-      return res
-        .status(404)
-        .send({ error: "Task not found or does not exist!" });
+      return res.status(404).send();
     }
 
     res.send(task);

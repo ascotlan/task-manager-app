@@ -9,16 +9,6 @@ const taskRouter = require("./routers/task"); //get router from task route handl
 const app = express();
 const port = process.env.PORT || 3000; //Set port to value provided by environment or default to 3000
 
-// const maintenanceMode = false;
-
-// app.use((req, res, next) => {
-//   if (maintenanceMode === true) {
-//     return res.status(503).send("Site down for Maintenance. Try back later!");
-//   }
-
-//   next();
-// });
-
 //Use this middleware to parse all incoming requests with JSON payloads into objects
 app.use(express.json());
 
