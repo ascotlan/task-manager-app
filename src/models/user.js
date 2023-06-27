@@ -51,6 +51,13 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
+// Use a virtual to set a property that is not stored in MongoDB on the User model. In this case it will be all the tasks associated with the user
+userSchema.virtual("tasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "owner",
+});
+
 // define an instance method on a document. In this case , the document is the user instance object in the routing file. Because it acts solely on the instance of a created user
 userSchema.methods.generateAuthtoken = async function () {
   const user = this;

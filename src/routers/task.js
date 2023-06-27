@@ -2,10 +2,14 @@ const express = require("express");
 const router = new express.Router();
 const ObjectId = require("mongoose").Types.ObjectId;
 const Task = require("../models/task"); //import task model
+const auth = require("../middleware/auth");
 
 //Route handler: Create a task using the "/tasks" endpoint
-router.post("/tasks", async (req, res) => {
-  const task = new Task(req.body); // create new task passing in the required object
+router.post("/tasks", auth, async (req, res) => {
+  const task = new Task({
+    ...req.body,
+    owner: req.user._id,
+  }); // create new task passing in the required object
 
   //.save() returns a promise. Save to db
   try {
