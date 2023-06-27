@@ -1,16 +1,16 @@
 const express = require("express");
 const router = new express.Router();
 const User = require("../models/user"); //import user model
-const ObjectId = require("mongoose").Types.ObjectId;
+const auth = require("../middleware/auth");
 
-//Route handler: Create a user using the "/users" endpoint
+//Route handler: Sign up i.e. Create a user using the "/users" endpoint
 router.post("/users", async (req, res) => {
   const user = new User(req.body); // create new user passing in require object
 
   //.save() returns a promise. Save to db
   try {
     await user.save();
-    const token = await user.generateAuthtoken();
+    const token = await user.generateAuthtoken(); //generate a new JWT
     res.status(201).send({
       user,
       token,
@@ -28,8 +28,9 @@ router.post("/users/login", async (req, res) => {
       req.body.password
     );
 
-    const token = await user.generateAuthtoken();
+    const token = await user.generateAuthtoken(); //generate a new JWT
 
+    //when we call res.send() it calls JSON.stringify on the objects passed as arguments
     res.send({
       user,
       token,
@@ -39,45 +40,39 @@ router.post("/users/login", async (req, res) => {
   }
 });
 
-// Route handler: Read all users from the database using the '/users' endpoint
-router.get("/users", async (req, res) => {
-  // .find() returns a promise
+//Route handler: Logout from an existing single user account
+router.post("/users/logout", auth, async (req, res) => {
   try {
-    const users = await User.find({});
-    res.send(users);
+    req.user.tokens = req.user.tokens.filter((token) => {
+      return token.token !== req.token; //filter out the tokens that are not the one that was just used to authenticate, effectively removing the current authentication token
+    });
+
+    await req.user.save();
+
+    res.send();
   } catch (e) {
-    res.status(500).send(e.message);
+    res.status(500).send();
   }
 });
 
-// Route handler: Read a user with a specific id using the "/users/:id" endpoint
-router.get("/users/:id", async (req, res) => {
-  const _id = req.params.id;
-
-  // must be a string of 12 bytes or a string of 24 hex characters or an integer
-  if (!ObjectId.isValid(req.params)) {
-    return res
-      .status(406)
-      .send({ error: "User with that invalid id does not exist!" });
-  }
-
-  // .findById() returns a promise
+//Route handler: Logout from all user sessions for a particular user
+router.post("/users/logoutAll", auth, async (req, res) => {
   try {
-    const user = await User.findById(_id);
-    if (!user) {
-      return res
-        .status(404)
-        .send({ error: "User not found or does not exist!" });
-    }
-
-    res.send(user);
+    req.user.tokens = []; //remove all tokens from User model
+    await req.user.save();
+    res.send();
   } catch (e) {
-    res.status(500).send(e.name);
+    res.status(500).send();
   }
+});
+
+// Route handler: Read a user profile from the database using the '/users/me' endpoint
+router.get("/users/me", auth, async (req, res) => {
+  res.send(req.user);
 });
 
 //Route handler: Update a user with a specific id using the "users/:id" endpoint
-router.patch("/users/:id", async (req, res) => {
+router.patch("/users/me", auth, async (req, res) => {
   //compare requested updates to allowed updated per the model schema
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password", "age"];
@@ -89,53 +84,20 @@ router.patch("/users/:id", async (req, res) => {
     return res.status(400).send({ error: "Invalid updates!" });
   }
 
-  const _id = req.params.id;
-
-  // must be a string of 12 bytes or a string of 24 hex characters or an integer
-  if (!ObjectId.isValid(req.params)) {
-    return res
-      .status(406)
-      .send({ error: "User with that invalid id does not exist!" });
-  }
-
   try {
-    const user = await User.findById(req.params.id);
-    updates.forEach((update) => (user[update] = req.body[update]));
-    await user.save();
-
-    if (!user) {
-      return res
-        .status(404)
-        .send({ error: "User not found or does not exist!" });
-    }
-
-    res.send(user);
+    updates.forEach((update) => (req.user[update] = req.body[update]));
+    await req.user.save();
+    res.send(req.user);
   } catch (e) {
     res.status(400).send(e.message);
   }
 });
 
 //Route handler: Delete a user using the "/users/:id" endpoint
-router.delete("/users/:id", async (req, res) => {
-  const _id = req.params.id;
-
-  // must be a string of 12 bytes or a string of 24 hex characters or an integer
-  if (!ObjectId.isValid(req.params)) {
-    return res
-      .status(406)
-      .send({ error: "User with that invalid id does not exist!" });
-  }
-
+router.delete("/users/me", auth, async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(_id);
-
-    if (!user) {
-      return res
-        .status(404)
-        .send({ error: "User not found or does not exist!" });
-    }
-
-    res.send(user);
+    await req.user.deleteOne();
+    res.send(req.user);
   } catch (e) {
     res.status(500).send(e.message);
   }

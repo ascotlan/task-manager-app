@@ -51,9 +51,10 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
-// define an instance method on a document. In this case , the document is the user object in the routing file
+// define an instance method on a document. In this case , the document is the user instance object in the routing file. Because it acts solely on the instance of a created user
 userSchema.methods.generateAuthtoken = async function () {
   const user = this;
+  //signing the JWT. This is also where you can set teh exipration as an optional argument
   const token = await jwt.sign(
     { _id: user._id.toString() },
     "thisismynewskill"
@@ -64,7 +65,18 @@ userSchema.methods.generateAuthtoken = async function () {
   return token;
 };
 
-// define a static function on the model. In this case the model is User object in the routing file.
+// define an instance method on a document. In this case, the document is the user intance object in the routing file. This method edits the user object fields/properties
+userSchema.methods.toJSON = function () {
+  //whatever the toJSON methon on an object returns is what will be stringified when we call JSON.stringify on the object
+  const user = this;
+  const userObject = user.toObject();
+
+  delete userObject.password;
+  delete userObject.tokens;
+  return userObject; //return user object with the password or token feilds
+};
+
+// define a static function on the model. In this case the model is User model object in the routing file. For customizing a predefined method (findOne) on the model prototype.
 userSchema.statics.findByCredentials = async (email, password) => {
   const user = await User.findOne({ email });
 
