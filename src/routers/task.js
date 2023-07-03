@@ -19,10 +19,33 @@ router.post("/tasks", auth, async (req, res) => {
   }
 });
 
-// Route handler: Read all tasks from the database using the '/tasks' endpoint
+// GET /tasks?completed=true OR /tasks?completed=false
+// GET /tasks?limit=10&skip=0
+// GET /tasks?sortBy=createdAt:asc OR /tasks?sortBy=createdAt:desc
+// Route handler: Read all tasks from the database using the '/tasks' endpoint with optional queries
 router.get("/tasks", auth, async (req, res) => {
+  const match = {};
+  const sort = {};
+
+  if (req.query.completed) {
+    match.completed = req.query.completed === "true";
+  }
+
+  if (req.query.sortBy) {
+    const [key, order] = req.query.sortBy.split(":");
+    sort[key] = order === "asc" ? 1 : -1;
+  }
+
   try {
-    await req.user.populate("tasks"); //populate virtual tasks file on user document
+    await req.user.populate({
+      path: "tasks",
+      match,
+      options: {
+        limit: parseInt(req.query.limit),
+        skip: parseInt(req.query.skip),
+        sort,
+      },
+    }); //populate virtual tasks file on user document
     res.send(req.user.tasks);
   } catch (e) {
     res.status(500).send(e.message);
