@@ -2,6 +2,7 @@ const express = require("express");
 const router = new express.Router();
 const User = require("../models/user"); //import user model
 const auth = require("../middleware/auth");
+const multer = require("multer"); // require Multer middleware for file uploads
 
 //Route handler: Sign up i.e. Create a user using the "/users" endpoint
 router.post("/users", async (req, res) => {
@@ -102,5 +103,38 @@ router.delete("/users/me", auth, async (req, res) => {
     res.status(500).send(e.message);
   }
 });
+
+// set destination directory, filesize, and file extention for multer middleware uploads
+const upload = multer({
+  dest: "avatars/",
+  limits: {
+    fileSize: 1000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
+      return cb(
+        new Error(
+          "Please upload an image file with .png, .jpg or .jpeg extention"
+        )
+      );
+    }
+
+    cb(undefined, true);
+  },
+});
+
+// Route handler: Post to /users/me/avatar to upload a file
+router.post(
+  "/users/me/avatar",
+  auth,
+  upload.single("avatar"),
+  (req, res) => {
+    res.send();
+  },
+  (error, req, res, next) => {
+    // error first callback that captures error thrown by multer middleware
+    res.status(400).send({ error: error.message });
+  }
+);
 
 module.exports = router;
