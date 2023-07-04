@@ -7,7 +7,7 @@ const userRouter = require("./routers/user"); //get router from user route handl
 const taskRouter = require("./routers/task"); //get router from task route handling file
 
 const app = express();
-const port = process.env.PORT || 3000; //Set port to value provided by environment or default to 3000
+const port = process.env.PORT; //Set port to value provided by environment or default to 3000
 
 //Use this middleware to parse all incoming requests with JSON payloads into objects
 app.use(express.json());

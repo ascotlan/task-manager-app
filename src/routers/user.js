@@ -4,6 +4,10 @@ const User = require("../models/user"); //import user model
 const auth = require("../middleware/auth");
 const multer = require("multer"); // require Multer middleware for file uploads
 const sharp = require("sharp"); // require sharp Node.js module for image file formating
+const {
+  sendWelcomeEmail,
+  sendCancellationEmail,
+} = require("../emails/account");
 
 //Route handler: Sign up i.e. Create a user using the "/users" endpoint
 router.post("/users", async (req, res) => {
@@ -12,6 +16,7 @@ router.post("/users", async (req, res) => {
   //.save() returns a promise. Save to db
   try {
     await user.save();
+    sendWelcomeEmail(user.email, user.name); //send welcome email
     const token = await user.generateAuthtoken(); //generate a new JWT
     res.status(201).send({
       user,
@@ -99,6 +104,7 @@ router.patch("/users/me", auth, async (req, res) => {
 router.delete("/users/me", auth, async (req, res) => {
   try {
     await req.user.deleteOne();
+    sendCancellationEmail(req.user.email, req.user.name);
     res.send(req.user);
   } catch (e) {
     res.status(500).send(e.message);

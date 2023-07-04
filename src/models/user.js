@@ -73,7 +73,7 @@ userSchema.methods.generateAuthtoken = async function () {
   //signing the JWT. This is also where you can set teh exipration as an optional argument
   const token = await jwt.sign(
     { _id: user._id.toString() },
-    "thisismynewskill"
+    process.env.JWT_SECRET
   );
 
   user.tokens = user.tokens.concat({ token });
