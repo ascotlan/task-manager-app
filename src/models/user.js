@@ -51,6 +51,9 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    avatar: {
+      type: Buffer,
+    },
   },
   {
     timestamps: true,
@@ -80,12 +83,13 @@ userSchema.methods.generateAuthtoken = async function () {
 
 // define an instance method on a document. In this case, the document is the user intance object in the routing file. This method edits the user object fields/properties
 userSchema.methods.toJSON = function () {
-  //whatever the toJSON methon on an object returns is what will be stringified when we call JSON.stringify on the object
+  //whatever the toJSON method on an object returns is what will be stringified when we call JSON.stringify on the object
   const user = this;
   const userObject = user.toObject();
 
   delete userObject.password;
   delete userObject.tokens;
+  delete userObject.avatar;
   return userObject; //return user object with the password or token feilds
 };
 

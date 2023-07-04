@@ -3,6 +3,7 @@ const router = new express.Router();
 const User = require("../models/user"); //import user model
 const auth = require("../middleware/auth");
 const multer = require("multer"); // require Multer middleware for file uploads
+const sharp = require("sharp"); // require sharp Node.js module for image file formating
 
 //Route handler: Sign up i.e. Create a user using the "/users" endpoint
 router.post("/users", async (req, res) => {
@@ -104,9 +105,8 @@ router.delete("/users/me", auth, async (req, res) => {
   }
 });
 
-// set destination directory, filesize, and file extention for multer middleware uploads
+// Pass file to route handler after validating, filesize, and file extention for multer middleware uploads
 const upload = multer({
-  dest: "avatars/",
   limits: {
     fileSize: 1000000,
   },
@@ -123,12 +123,18 @@ const upload = multer({
   },
 });
 
-// Route handler: Post to /users/me/avatar to upload a file
+// Route handler: Post to /users/me/avatar to upload/update an avatar file
 router.post(
   "/users/me/avatar",
   auth,
   upload.single("avatar"),
-  (req, res) => {
+  async (req, res) => {
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+    req.user.avatar = buffer;
+    await req.user.save();
     res.send();
   },
   (error, req, res, next) => {
@@ -136,5 +142,31 @@ router.post(
     res.status(400).send({ error: error.message });
   }
 );
+
+// Route handler: Delete to /users/me/avatar to delete avatar file
+router.delete("/users/me/avatar", auth, async (req, res) => {
+  if (req.user.avatar) {
+    req.user.avatar = undefined;
+    await req.user.save();
+    return res.send();
+  }
+
+  res.status(400).send();
+});
+
+//Route handler: GET to /users/:id/avatar to fetch avatar image by user id
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || !user.avatar) {
+      throw new Error();
+    }
+
+    res.set("Content-type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404).send();
+  }
+});
 
 module.exports = router;
