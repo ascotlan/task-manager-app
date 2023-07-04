@@ -4,4 +4,4 @@ const mongoose = require("mongoose");
 mongoose
   .connect(process.env.MONGODB_URL)
   .then(() => console.log("mongodb is connected"))
-  .catch((error) => console.log(error));
+  .catch((error) => console.log(error.message));
