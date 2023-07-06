@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "env-cmd -f ./env-config/dev.env nodemon src/index.js"
+    "dev": "env-cmd -f ./env-config/dev.env nodemon src/index.js",
+    "test": "env-cmd -f ./env-config/test.env mocha --exit"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +23,10 @@
     "validator": "^13.9.0"
   },
   "devDependencies": {
+    "chai": "^4.3.7",
     "env-cmd": "^10.1.0",
-    "nodemon": "^2.0.22"
+    "mocha": "^10.2.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3"
   }
 }

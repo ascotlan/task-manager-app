@@ -69,7 +69,7 @@ userSchema.virtual("tasks", {
 
 // define an instance method on a document. In this case , the document is the user instance object in the routing file. Because it acts solely on the instance of a created user
 userSchema.methods.generateAuthtoken = async function () {
-  const user = this;
+  const user = this; //this is the user object
   //signing the JWT. This is also where you can set teh exipration as an optional argument
   const token = await jwt.sign(
     { _id: user._id.toString() },
