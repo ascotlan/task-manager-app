@@ -2,28 +2,10 @@ const { expect, assert } = require("chai");
 const request = require("supertest");
 const app = require("../src/app");
 const User = require("../src/models/user");
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+const { userOneId, userOne, setupDatabase } = require("./fixtures/db");
 
 describe("Route handler user testing for each endpoint ", () => {
-  const userOneId = new mongoose.Types.ObjectId();
-
-  const userOne = {
-    _id: userOneId,
-    name: "Kevin Scotland",
-    email: "kevin@example.com",
-    password: "56what!!",
-    tokens: [
-      {
-        token: jwt.sign({ _id: userOneId }, process.env.JWT_SECRET),
-      },
-    ],
-  };
-
-  beforeEach(async () => {
-    await User.deleteMany(); //delete all users using mongoose method on the User model
-    await new User(userOne).save(); // save userOne to the db
-  });
+  beforeEach(setupDatabase);
 
   it("Should signup a new user", async () => {
     const response = await request(app).post("/users").send({
